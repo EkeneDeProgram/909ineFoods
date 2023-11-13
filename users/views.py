@@ -3,6 +3,7 @@ from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
+from django.contrib.auth import get_user_model
 from rest_framework import status
 
 # Import python standard modules
@@ -40,7 +41,33 @@ class RegistrationView(CreateAPIView):
             return Response(serialized_data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
-    
+
+
+# Defind a login view
+class LoginView(APIView):
+    def post(self, request, *args, **kwargs):
+        # Get the user's input verification code from the request
+        email = request.data.get('email') 
+
+        # Check if the email exists in the database
+        user = get_user_model().objects.filter(email=email).first()
+
+        if not user:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        verification_code = generate_verification_code() # Generate verification code for user
+        hash_verification_code = hash_VC(verification_code) # Hash verification code
+
+        user.hashed_verification_code = hash_verification_code 
+        user.save()
+
+        # Send email verification code 
+        email = user.email
+        send_verification_email(email, verification_code)
+
+        return Response({'message': 'Login successful'}, status=status.HTTP_200_OK)
+        
+
 # Define view to verify user verification code and generate JWT
 class VerifyCodeView(APIView):
     def post(self, request, *args, **kwargs):
@@ -97,14 +124,41 @@ class UserView(APIView):
         return Response(serializer.data)
 
 
+
+
 # Defind view to logout user by deleting the JWT cookie
 class LogoutView(APIView):
     def post(self, request):
-        # Create a new Response object
+        # Get the JWT token from the cookie
+        token = request.COOKIES.get('jwt')
+
+        # Check if the token is not present
+        if not token:
+           # Raise an AuthenticationFailed exception with a message
+            raise AuthenticationFailed('Unauthenticated!')
+        
+        try:
+            # Decode the token to get the user ID
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithm=JWT_ALGORITH)
+        except jwt.ExpiredSignatureError:
+            return Response({'detail': 'Token has expired'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Get the user
+        user = get_user_model().objects.filter(id=payload['id']).first()
+
+        # Check if the user is found
+        if not user:
+            return Response({'detail': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        # Update is_login to False
+        user.is_login = False
+        user.save()
+
+        # Delete the 'jwt' cookie from the response
         response = Response()
         # Delete the 'jwt' cookie from the response. 
         response.delete_cookie('jwt')
         response.data = {
-            'message': 'success'
+            'message': 'Logout successful'
         }
         return response
