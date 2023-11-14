@@ -17,7 +17,7 @@ class User(AbstractUser):
 
     objects = UserManager()
 
-    USERNAME_FIELD = 'email'
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []  # Remove 'email' from REQUIRED_FIELDS
 
     # Add related_name arguments to resolve the clash
@@ -41,7 +41,7 @@ class User(AbstractUser):
         # Parse the phone number to extract its components
         parsed_number = parse(self.phone_number, None)
         # Reformat the phone number to include a plus sign and the country code, followed by the national number
-        self.phone_number = f'+{parsed_number.country_code}{parsed_number.national_number}'
+        self.phone_number = f"+{parsed_number.country_code}{parsed_number.national_number}"
         # Call the save method of the parent class (AbstractUser) to save the custom user instance
         super().save(*args, **kwargs)
 
