@@ -4,6 +4,12 @@ from phonenumbers import parse
 from .managers import UserManager
 
 
+class Address(models.Model):
+    street = models.CharField(max_length=255)
+    city = models.CharField(max_length=100)
+    state = models.CharField(max_length=50)
+
+
 class User(AbstractUser):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
@@ -12,6 +18,7 @@ class User(AbstractUser):
     hashed_verification_code = models.CharField(max_length=200, null=True, blank=True)
     is_verified = models.BooleanField(default=False)
     is_login = models.BooleanField(default=False)
+    address = models.OneToOneField(Address, on_delete=models.CASCADE, null=True, blank=True, default=None)
   
   
 

@@ -10,8 +10,8 @@ from rest_framework import status
 import jwt, datetime
 
 # Import project modules
-from .serializers import UserSerializer
-from .models import User
+from .serializers import UserSerializer, AddressSerializer
+from .models import User, Address
 from .utils import *
 
 
@@ -121,7 +121,14 @@ class UserView(APIView):
         
         user = User.objects.filter(id=payload["id"]).first()
         serializer = UserSerializer(user)
-        return Response(serializer.data)
+        address_serializer = AddressSerializer(user.address)
+        response_data = {
+            "user": serializer.data,
+            "address": address_serializer.data,
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+       
 
 
 
@@ -286,5 +293,67 @@ class UpdateUserNameView(APIView):
 
         user.save()
         return Response({"message": "Name updated successfully"}, status=status.HTTP_200_OK)
+    
 
-         
+# Define View to update user address
+class UpdateUserAddressView(APIView):
+    def put(self, request, *args, **kwargs):
+        # Get the JWT token from the cookie
+        token = request.COOKIES.get("jwt")
+
+        # Get the new address details from the request
+        new_street = request.data.get("street")
+        new_city = request.data.get("city")
+        new_state = request.data.get("state")
+
+        # Check if the token is not present
+        if not token:
+            # Raise an AuthenticationFailed exception with a message
+            raise AuthenticationFailed("Unauthenticated!")
+        
+        try:
+            # Decode the token to get the user ID
+            payload = jwt.decode(token, JWT_SECRET_KEY, algorithm=JWT_ALGORITH)
+        except jwt.ExpiredSignatureError:
+            return Response({"detail": "Token has expired"}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        # Get the user
+        user = get_user_model().objects.filter(id=payload["id"]).first()
+
+        # Check if the user is found
+        if not user:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+        
+        
+        # Check if the user has an associated address
+        if user.address:
+            # Update only the specified address fields
+            if new_street:
+                user.address.street = new_street
+            if new_city:
+                user.address.city = new_city
+            if new_state:
+                user.address.state = new_state
+
+            user.address.save()
+        else:
+            # If the user does not have an associated address, create one
+            address = Address.objects.create(street=new_street, city=new_city, state=new_state)
+            user.address = address
+            user.save()
+
+        # Serialize the updated user and address details
+        serializer = UserSerializer(user)
+        address_serializer = AddressSerializer(user.address)
+        response_data = {
+            "message": "Address updated successfully",
+            "user": serializer.data,
+            "address": address_serializer.data,
+        }
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+
+
+
+
