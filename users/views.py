@@ -1,5 +1,5 @@
 # Import third party modules
-from rest_framework.generics import CreateAPIView
+from rest_framework.generics import CreateAPIView, UpdateAPIView
 from rest_framework.views import APIView
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
@@ -352,6 +352,40 @@ class UpdateUserAddressView(APIView):
         }
 
         return Response(response_data, status=status.HTTP_200_OK)
+    
+
+# Define view to resend verification code to user
+class ResendVerificationCodeView(UpdateAPIView):
+    # serializer_class = UserSerializer
+
+    def update(self, request, *args, **kwargs):
+        # Get the user based on the provided email
+        email = request.data.get("email")
+        user = get_user_model().objects.filter(email=email).first()
+
+        if not user:
+            return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the user is already verified
+        if user.is_verified:
+            return Response({"detail": "User is already verified"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Generate and save a new verification code
+        verification_code = generate_verification_code()
+        hash_verification_code = hash_VC(verification_code)
+        user.hashed_verification_code = hash_verification_code
+        user.save()
+
+        # Send the new verification code via email
+        send_verification_email(email, verification_code)
+
+        return Response({"message": "Verification code resent successfully"}, status=status.HTTP_200_OK)
+
+
+
+
+
+
 
 
 

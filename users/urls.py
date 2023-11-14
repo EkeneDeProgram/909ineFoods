@@ -11,4 +11,5 @@ urlpatterns = [
     path("update_phone/", UpdatePhoneNumberView.as_view(), name="update-phone"),
     path("update_name/", UpdateUserNameView.as_view(), name="update-name"),
     path("update_address/", UpdateUserAddressView.as_view(), name="update-address"),
+    path("resend_verification_code/", ResendVerificationCodeView.as_view(), name="resend-verification_code"),
 ]
