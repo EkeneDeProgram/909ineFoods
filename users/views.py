@@ -28,6 +28,7 @@ class RegistrationView(CreateAPIView):
             verification_code = generate_verification_code() # Generate verification code for user
             hash_verification_code = hash_VC(verification_code) # Hash verification code
 
+            # Update and save user details
             user.hashed_verification_code = hash_verification_code 
             user.save()
 
@@ -42,22 +43,21 @@ class RegistrationView(CreateAPIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     
 
-
 # Define a login view
 class LoginView(APIView):
     def post(self, request, *args, **kwargs):
-        # Get the user's input verification code from the request
+        # Get the user's input email from the request
         email = request.data.get("email") 
 
         # Check if the email exists in the database
         user = get_user_model().objects.filter(email=email).first()
-
         if not user:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         
         verification_code = generate_verification_code() # Generate verification code for user
         hash_verification_code = hash_VC(verification_code) # Hash verification code
 
+         # Update and save user details
         user.hashed_verification_code = hash_verification_code 
         user.save()
 
@@ -75,19 +75,22 @@ class VerifyCodeView(APIView):
         user_input_code = request.data.get("verification_code") 
 
         try:
-            hashed_input_code = hash_VC(user_input_code)
-            user = User.objects.get(hashed_verification_code=hashed_input_code)
+            hashed_input_code = hash_VC(user_input_code) # Hash user inputed verification code
+            user = User.objects.get(hashed_verification_code=hashed_input_code) # Get user with that email
 
+            # If user Exists
             if user: 
                 user.is_verified = True
                 user.is_login = True
                 user.save()
 
+                # Create a payload dictionary containing information to be encoded in the JWT
                 payload = {
                     "id": user.id,
                     "iat": datetime.datetime.utcnow()
                 }
 
+                # Encode the payload into a JWT using the specified secret key and algorithm
                 token = jwt.encode(payload, JWT_SECRET_KEY, algorithm=JWT_ALGORITH).decode("utf-8")
 
                 # Return token via cookies
@@ -102,8 +105,7 @@ class VerifyCodeView(APIView):
             return Response({"detail": "Invalid verification code"}, status=status.HTTP_400_BAD_REQUEST)
         
 
-
-# Define view to retrieve user information based on a JWT stored in the request's cookies
+# Define view to retrieve user information(Profile) based on a JWT stored in the request's cookies
 class UserView(APIView):
     def get(self, request):
         token = request.COOKIES.get("jwt")
@@ -114,9 +116,10 @@ class UserView(APIView):
             raise AuthenticationFailed("Unauthenticated!")
         
         try:
+             # Decode the JWT using the provided secret key and algorithm
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithm=JWT_ALGORITH)
-        except jwt.ExpiredSignatureError:
-            # If the decoding fails due to an expired signature, raise an AuthenticationFailed exception
+        except jwt.DecodeError:
+            # Handle every potential decoding errors.
             raise AuthenticationFailed("Unauthenticated!")
         
         user = User.objects.filter(id=payload["id"]).first()
@@ -130,9 +133,6 @@ class UserView(APIView):
         return Response(response_data, status=status.HTTP_200_OK)
        
 
-
-
-
 # Define view to logout user by deleting the JWT cookie
 class LogoutView(APIView):
     def post(self, request):
@@ -145,10 +145,11 @@ class LogoutView(APIView):
             raise AuthenticationFailed("Unauthenticated!")
         
         try:
-            # Decode the token to get the user ID
+            # Decode the JWT using the provided secret key and algorithm
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithm=JWT_ALGORITH)
-        except jwt.ExpiredSignatureError:
-            return Response({"detail": "Token has expired"}, status=status.HTTP_401_UNAUTHORIZED)
+        except jwt.DecodeError:
+            # Handle every potential decoding errors.
+            return Response({"detail": "An error occurred"}, status=status.HTTP_401_UNAUTHORIZED)
         
         # Get the user
         user = get_user_model().objects.filter(id=payload["id"]).first()
@@ -186,10 +187,11 @@ class UpdateEmailView(APIView):
             raise AuthenticationFailed("Unauthenticated!")
         
         try:
-            # Decode the token to get the user ID
+            # Decode the JWT using the provided secret key and algorithm
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithm=JWT_ALGORITH)
-        except jwt.ExpiredSignatureError:
-            return Response({"detail": "Token has expired"}, status=status.HTTP_401_UNAUTHORIZED)
+        except jwt.DecodeError:
+            # Handle every potential decoding errors.
+            return Response({"detail": "An error occurred"}, status=status.HTTP_401_UNAUTHORIZED)
         
         # Get the user
         user = get_user_model().objects.filter(id=payload["id"]).first()
@@ -233,10 +235,11 @@ class UpdatePhoneNumberView(APIView):
             raise AuthenticationFailed("Unauthenticated!")
         
         try:
-            # Decode the token to get the user ID
+            # Decode the JWT using the provided secret key and algorithm
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithm=JWT_ALGORITH)
-        except jwt.ExpiredSignatureError:
-            return Response({"detail": "Token has expired"}, status=status.HTTP_401_UNAUTHORIZED)
+        except jwt.DecodeError:
+            # Handle every potential decoding errors.
+            return Response({"detail": "An error occurred"}, status=status.HTTP_401_UNAUTHORIZED)
         
         # Get the user
         user = get_user_model().objects.filter(id=payload["id"]).first()
@@ -245,7 +248,7 @@ class UpdatePhoneNumberView(APIView):
         if not user:
             return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         
-        # Check if the new email already exists in the database
+        # Check if the new phone number exists in the database
         if get_user_model().objects.exclude(id=user.id).filter(phone_number=new_phone_number).exists():
             return Response({"detail": "phone number already exists"}, status=status.HTTP_400_BAD_REQUEST)
         
@@ -256,14 +259,13 @@ class UpdatePhoneNumberView(APIView):
         return Response({"message": "phone number updated successfully"}, status=status.HTTP_200_OK)
    
 
-
 # Define view to update user first_name and last_name
 class UpdateUserNameView(APIView):
     def put(self, request, *args, **kwargs):
         # Get the JWT token from the cookie
         token = request.COOKIES.get("jwt")
 
-        # Get the new email from user
+        # Get the new name from user
         new_first_name = request.data.get("first_name")
         new_last_name = request.data.get("last_name")
 
@@ -273,10 +275,11 @@ class UpdateUserNameView(APIView):
             raise AuthenticationFailed("Unauthenticated!")
         
         try:
-            # Decode the token to get the user ID
+            # Decode the JWT using the provided secret key and algorithm
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithm=JWT_ALGORITH)
-        except jwt.ExpiredSignatureError:
-            return Response({"detail": "Token has expired"}, status=status.HTTP_401_UNAUTHORIZED)
+        except jwt.DecodeError:
+            # Handle every potential decoding errors.
+            return Response({"detail": "An error occurred"}, status=status.HTTP_401_UNAUTHORIZED)
         
         # Get the user
         user = get_user_model().objects.filter(id=payload["id"]).first()
@@ -312,10 +315,11 @@ class UpdateUserAddressView(APIView):
             raise AuthenticationFailed("Unauthenticated!")
         
         try:
-            # Decode the token to get the user ID
+            # Decode the JWT using the provided secret key and algorithm
             payload = jwt.decode(token, JWT_SECRET_KEY, algorithm=JWT_ALGORITH)
-        except jwt.ExpiredSignatureError:
-            return Response({"detail": "Token has expired"}, status=status.HTTP_401_UNAUTHORIZED)
+        except jwt.DecodeError:
+            # Handle every potential decoding errors.
+            return Response({"detail": "An error occurred"}, status=status.HTTP_401_UNAUTHORIZED)
         
         # Get the user
         user = get_user_model().objects.filter(id=payload["id"]).first()
@@ -380,14 +384,10 @@ class ResendVerificationCodeView(UpdateAPIView):
         send_verification_email(email, verification_code)
 
         return Response({"message": "Verification code resent successfully"}, status=status.HTTP_200_OK)
+    
 
-
-
-
-
-
-
-
+# ADD user image
+# ADD view to enable user delete thier acount
 
 
 
