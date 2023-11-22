@@ -6,3 +6,4 @@ phonenumbers==8.13.24
 python-decouple==3.8
 PyJWT==1.7.1
 django-cors-headers==4.3.0
+pillow==10.1.0

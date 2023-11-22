@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.contrib.auth import logout
 from django.core.exceptions import ValidationError
+from rest_framework.parsers import MultiPartParser, FormParser
 
 # Import project modules
 from .models import Vendor, Location, MenuItem
@@ -375,7 +376,7 @@ class DeleteVendorLocationView(APIView):
 class AddMenuItemView(APIView):
     def post(self, request, *args, **kwargs):
         response = Response()
-        jwt_token = request.COOKIES.get('jwt')
+        jwt_token = request.COOKIES.get("jwt")
 
         # Get data for the new menu item from the request
         category_id=request.data.get("category_id")
@@ -386,7 +387,7 @@ class AddMenuItemView(APIView):
         if jwt_token:
             try:
                 decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
-                vendor_id = decoded_payload.get('id')
+                vendor_id = decoded_payload.get("id")
 
                 # Create a new menu item
                 menu_item = MenuItem.objects.create(
@@ -413,12 +414,12 @@ class AddMenuItemView(APIView):
 # Define view to Retrieve all vendor items(vendor menu)
 class VendorMenuView(APIView):
     def get(self, request, *args, **kwargs):
-        jwt_token = request.COOKIES.get('jwt')
+        jwt_token = request.COOKIES.get("jwt")
 
         if jwt_token:
             try:
                 decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
-                vendor_id = decoded_payload.get('id')
+                vendor_id = decoded_payload.get("id")
                 vendor = Vendor.objects.get(id=vendor_id)
 
                 # Retrieve all items added by the vendor
@@ -438,12 +439,12 @@ class VendorMenuView(APIView):
 # Define view to get vendor menu by categories
 class VendorItemsByCategoryView(APIView):
     def get(self, request, category_id, *args, **kwargs):
-        jwt_token = request.COOKIES.get('jwt')
+        jwt_token = request.COOKIES.get("jwt")
 
         if jwt_token:
             try:
                 decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
-                vendor_id = decoded_payload.get('id')
+                vendor_id = decoded_payload.get("id")
                 vendor = Vendor.objects.get(id=vendor_id)
 
                 # Retrieve all items added by the vendor for the specified category
@@ -540,6 +541,45 @@ class UpdateItemView(APIView):
                 return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         return response
+    
+
+# Define view to update vendor profile image
+class UpdateVendorImageView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    def patch(self, request, *args, **kwargs):
+        response = Response()
+        jwt_token = request.COOKIES.get("jwt")
+
+        # Get the image from the request
+        image = request.data.get("image")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get("id")
+            
+
+                if not image:
+                    return Response({"detail": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+                
+                vendor = Vendor.objects.get(id=vendor_id)
+                
+                # Update the vendor's image
+                vendor.image = image
+                vendor.save()
+                response.data = {
+                    "message": "update successfull"
+                }
+                    
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except Vendor.DoesNotExist:
+                return Response({"detail": "Vendor not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        return response
+            
+
+
 
 
     

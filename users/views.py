@@ -5,6 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
 from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 
 # Import python standard modules
 import jwt, datetime
@@ -360,8 +361,6 @@ class UpdateUserAddressView(APIView):
 
 # Define view to resend verification code to user
 class ResendVerificationCodeView(UpdateAPIView):
-    # serializer_class = UserSerializer
-
     def update(self, request, *args, **kwargs):
         # Get the user based on the provided email
         email = request.data.get("email")
@@ -386,8 +385,70 @@ class ResendVerificationCodeView(UpdateAPIView):
         return Response({"message": "Verification code resent successfully"}, status=status.HTTP_200_OK)
     
 
-# ADD user image
-# ADD view to enable user delete thier acount
+
+# Define view to update user profile image
+class UpdateUserImageView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    def patch(self, request, *args, **kwargs):
+        response = Response()
+        jwt_token = request.COOKIES.get("jwt")
+
+        # Get the image from the request
+        image = request.data.get("profile_image")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                user_id = decoded_payload.get("id")
+            
+
+                if not image:
+                    return Response({"detail": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
+                
+                user = User.objects.get(id=user_id)
+                
+                # Update the vendor's image
+                user.profile_image = image
+                user.save()
+                response.data = {
+                    "message": "update successfull"
+                }
+                    
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "Vendor not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        return response
+            
+
+# Define view to enable user delete thier account
+class UserDeleteAccountView(APIView):
+    def delete(self, request, *args, **kwargs):
+        response = Response()
+
+        jwt_token = request.COOKIES.get("jwt")
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get("id")
+                # Retrieve the vendor from the database
+                user = User.objects.get(id=vendor_id)
+
+                # Delete the vendor
+                user.delete()
+                response.data = {
+                    "message": "Your account has been deleted successfully"
+                }
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return response
+    
+
 
 
 

@@ -19,6 +19,7 @@ class User(AbstractUser):
     is_verified = models.BooleanField(default=False)
     is_login = models.BooleanField(default=False)
     address = models.OneToOneField(Address, on_delete=models.CASCADE, null=True, blank=True, default=None)
+    profile_image = models.ImageField(upload_to="user_images/", null=True, blank=True)
   
   
 

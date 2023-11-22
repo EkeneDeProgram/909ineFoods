@@ -12,6 +12,7 @@ urlpatterns = [
     path("update_vendor_email/", UpdateVendorEmailView.as_view(), name="update-vendor-email"),
     path("update_vendor_contact_info/", UpdateVendorContactInfoView.as_view(), name="update-vendor-contact_info"),
     path("update_vendor/", UpdateVendorNameAndDescriptionView.as_view(), name="update-vendor"),
+    path("update_vendor_image/", UpdateVendorImageView.as_view(), name="update-vendor-image"),
     # location urls
     path("add_location/", AddVendorLocationView.as_view(), name="add-location"),
     path("delete_location/<int:location_id>/", DeleteVendorLocationView.as_view(), name="delete-location"),

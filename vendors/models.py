@@ -38,7 +38,8 @@ class Vendor(models.Model):
     is_verified = models.BooleanField(default=False)
     is_active = models.BooleanField(default=False)
     is_login = models.BooleanField(default=False)
-    registration_date = models.DateTimeField(default=timezone.now)  # Adds the registration date and time
+    registration_date = models.DateTimeField(default=timezone.now) 
+    image = models.ImageField(upload_to="vendor_images/", null=True, blank=True)
 
 
     def add_location(self, street, city, state):

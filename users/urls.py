@@ -12,4 +12,6 @@ urlpatterns = [
     path("update_name/", UpdateUserNameView.as_view(), name="update-name"),
     path("update_address/", UpdateUserAddressView.as_view(), name="update-address"),
     path("resend_verification_code/", ResendVerificationCodeView.as_view(), name="resend-verification_code"),
+    path("update_user_image/", UpdateUserImageView.as_view(), name="update-user-image"),
+    path("delete_user/", UserDeleteAccountView.as_view(), name="delete-user"),
 ]
