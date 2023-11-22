@@ -46,13 +46,8 @@ class VendorSerializer(serializers.ModelSerializer):
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ("id", "name", "description", "parent_category")
+        fields = ("id", "name", "description")
 
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation["parent_category"] = CategorySerializer(instance.parent_category).data
-        return representation
-    
     
 # MenuItem model serializer
 class MenuItemSerializer(serializers.ModelSerializer):
@@ -60,8 +55,9 @@ class MenuItemSerializer(serializers.ModelSerializer):
         model = MenuItem
         fields = ("id", "vendor", "category", "name", "description", "price")
 
+
     def to_representation(self, instance):
         representation = super().to_representation(instance)
-        representation["vendor"] = VendorSerializer(instance.vendor).data
-        representation["category"] = CategorySerializer(instance.category).data
+        # Exclude 'vendor' and 'category' fields
+        representation.pop('vendor', None)
         return representation

@@ -8,8 +8,8 @@ from django.contrib.auth import logout
 from django.core.exceptions import ValidationError
 
 # Import project modules
-from .models import Vendor, Location
-from .serializers import VendorSerializer
+from .models import Vendor, Location, MenuItem
+from .serializers import VendorSerializer, MenuItemSerializer
 from users.utils import *
 
 # Import python standard modules
@@ -369,3 +369,181 @@ class DeleteVendorLocationView(APIView):
                 return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         return response
+    
+
+# Define view to add item to menu
+class AddMenuItemView(APIView):
+    def post(self, request, *args, **kwargs):
+        response = Response()
+        jwt_token = request.COOKIES.get('jwt')
+
+        # Get data for the new menu item from the request
+        category_id=request.data.get("category_id")
+        name = request.data.get("name")
+        description = request.data.get("description")
+        price = request.data.get("price")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get('id')
+
+                # Create a new menu item
+                menu_item = MenuItem.objects.create(
+                    vendor_id=vendor_id,
+                    category_id=category_id,  
+                    name=name,
+                    description=description,
+                    price=price
+                )
+
+                # Serialize the new menu item and return the data
+                serializer = MenuItemSerializer(menu_item)
+                response.data = serializer.data
+                response.status_code = status.HTTP_201_CREATED
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except Vendor.DoesNotExist:
+                return Response({"detail": "Vendor not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return response
+    
+
+# Define view to Retrieve all vendor items(vendor menu)
+class VendorMenuView(APIView):
+    def get(self, request, *args, **kwargs):
+        jwt_token = request.COOKIES.get('jwt')
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get('id')
+                vendor = Vendor.objects.get(id=vendor_id)
+
+                # Retrieve all items added by the vendor
+                items = MenuItem.objects.filter(vendor=vendor)
+
+    
+                # Serialize the items and return the data
+                serializer = MenuItemSerializer(items, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except Vendor.DoesNotExist:
+                return Response({"detail": "Vendor not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+# Define view to get vendor menu by categories
+class VendorItemsByCategoryView(APIView):
+    def get(self, request, category_id, *args, **kwargs):
+        jwt_token = request.COOKIES.get('jwt')
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get('id')
+                vendor = Vendor.objects.get(id=vendor_id)
+
+                # Retrieve all items added by the vendor for the specified category
+                items = MenuItem.objects.filter(vendor=vendor, category=category_id)
+
+    
+                # Serialize the items and return the data
+                serializer = MenuItemSerializer(items, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except Vendor.DoesNotExist:
+                return Response({"detail": "Vendor not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+
+
+# Define view to delete a particular item from menu
+class DeleteVendorItemView(APIView):
+    def delete(self, request, item_id, *args, **kwargs):
+        response = Response()
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get("id")
+                vendor = Vendor.objects.get(id=vendor_id)
+
+                # Check if the item exists and belongs to the vendor
+                try:
+                    item = MenuItem.objects.get(id=item_id, vendor=vendor)
+                except MenuItem.DoesNotExist:
+                    return Response({"detail": "Item not found or does not belong to the vendor"}, status=status.HTTP_404_NOT_FOUND)
+
+                # Delete the location
+                item.delete()
+
+                response.data = {
+                    "message": "Item deleted successfully."
+                }
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except Vendor.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return response
+    
+
+# Define view to update vendor item
+class UpdateItemView(APIView):
+    def put(self, request,  item_id, *args, **kwargs):
+
+        response = Response()
+        jwt_token = request.COOKIES.get("jwt")
+
+        
+        # Get the new item name, description and price from vendor
+        new_name = request.data.get("name")
+        new_description = request.data.get("description")
+        new_price = request.data.get("price")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get("id")
+                # Retrieve the vendor from the database
+                vendor = Vendor.objects.get(id=vendor_id)
+
+                # Check if the item exists and belongs to the vendor
+                try:
+                    item = MenuItem.objects.get(id=item_id, vendor=vendor)
+                except MenuItem.DoesNotExist:
+                    return Response({"detail": "Item not found or does not belong to the vendor"}, status=status.HTTP_404_NOT_FOUND)
+
+
+                # Update item details
+                if new_name:
+                    item.name = new_name
+                if new_description:
+                        item.description = new_description
+                if new_price:
+                    item.price = new_price
+                item.save()
+
+                response.data = {
+                    "message": "update successfull"
+                }
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except Vendor.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return response
+
+
+    
+            
+
+
+       

@@ -69,8 +69,7 @@ class Vendor(models.Model):
 class Category(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
-    parent_category = models.ForeignKey("self", null=True, blank=True, on_delete=models.CASCADE)
-
+    
 
 # Define MenuItem model
 class MenuItem(models.Model):
