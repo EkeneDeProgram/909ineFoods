@@ -4,6 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
+from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.parsers import MultiPartParser, FormParser
 
@@ -14,6 +15,8 @@ import jwt, datetime
 from .serializers import UserSerializer, AddressSerializer
 from .models import User, Address
 from .utils import *
+from vendors.models import *
+from vendors.serializers import *
 
 
 # Define view to create/register user
@@ -431,9 +434,9 @@ class UserDeleteAccountView(APIView):
         if jwt_token:
             try:
                 decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
-                vendor_id = decoded_payload.get("id")
+                user_id = decoded_payload.get("id")
                 # Retrieve the vendor from the database
-                user = User.objects.get(id=vendor_id)
+                user = User.objects.get(id=user_id)
 
                 # Delete the vendor
                 user.delete()
@@ -447,7 +450,122 @@ class UserDeleteAccountView(APIView):
                 return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
 
         return response
-    
+
+  
+# Define view to list all active vendors
+class ListActiveVendorsView(APIView):
+    def get(self, request, *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+
+                active_vendors = Vendor.objects.filter(is_active=True, is_login=True)
+                serializer = VendorSerializer(active_vendors, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+
+# Allows users to retrieve details about a specific vendor based on the vendor ID. 
+class VendorDetailsView(APIView):
+    def get(self, request, vendor_id, *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+
+                # Retrieve the vendor instance or return a 404 response if not found
+                vendor = get_object_or_404(Vendor, id=vendor_id)
+                serializer = VendorSerializer(vendor)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+       
+
+# Define view to enables users to view the menu of a specific food vendor
+class VendorMenuView(APIView):
+    def get(self, request, vendor_id, *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                
+                # Retrieve the vendor instance or return a 404 response if not found
+                vendor = get_object_or_404(Vendor, id=vendor_id)
+                
+                # Retrieve all items added to the menu by the vendor
+                menu_items = MenuItem.objects.filter(vendor=vendor)
+
+                # Serialize the items and return the data
+                serializer = MenuItemSerializer(menu_items, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+
+# Define a view that provides users with a list of food categories.
+class CategoryListView(APIView):
+    def get(self, request, *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+
+                # Retrieve all food categories
+                categories = Category.objects.all()
+
+                # Serialize the categories and return the data
+                serializer = CategorySerializer(categories, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+# Define a view to retrieve a list of vendors offering food in a specific category 
+class VendorsByCategoryView(APIView):
+    def get(self, request, category_id, *args, **kwargs):  
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH]) 
+
+                # Retrieve the category instance or return a 404 response if not found
+                category = get_object_or_404(Category, id=category_id)
+            
+                # Retrieve all vendors offering food in the specified category
+                vendors = Vendor.objects.filter(menuitem__category=category).distinct()
+
+                # Serialize the vendors and return the data
+                serializer = VendorSerializer(vendors, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+
+
+
+
 
 
 

@@ -14,4 +14,11 @@ urlpatterns = [
     path("resend_verification_code/", ResendVerificationCodeView.as_view(), name="resend-verification_code"),
     path("update_user_image/", UpdateUserImageView.as_view(), name="update-user-image"),
     path("delete_user/", UserDeleteAccountView.as_view(), name="delete-user"),
+    # user & vendor urls
+    path("list_vendors/", ListActiveVendorsView.as_view(), name="list-vendors"),
+    path("vendor_details/<int:vendor_id>/", VendorDetailsView.as_view(), name="vendor-details"),
+    path("vendor_menu/<int:vendor_id>/", VendorMenuView.as_view(), name="vendor-menu"),
+    path("categories/", CategoryListView.as_view(), name="category_list"),
+    path("vendors_by_category/<int:category_id>/", VendorsByCategoryView.as_view(), name="vendors_by_category"),
+
 ]
