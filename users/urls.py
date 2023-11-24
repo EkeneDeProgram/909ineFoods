@@ -20,5 +20,7 @@ urlpatterns = [
     path("vendor_menu/<int:vendor_id>/", VendorMenuView.as_view(), name="vendor-menu"),
     path("categories/", CategoryListView.as_view(), name="category_list"),
     path("vendors_by_category/<int:category_id>/", VendorsByCategoryView.as_view(), name="vendors_by_category"),
+    # order urls
+    # path("place_order/<int:vendor_id>/", PlaceOrderView.as_view(), name="place-order")
 
 ]

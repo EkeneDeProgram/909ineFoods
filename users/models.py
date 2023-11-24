@@ -2,6 +2,8 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser 
 from phonenumbers import parse
 from .managers import UserManager
+from vendors.models import *
+from django.utils import timezone
 
 # Define Address model
 class Address(models.Model):
@@ -52,6 +54,29 @@ class User(AbstractUser):
         self.phone_number = f"+{parsed_number.country_code}{parsed_number.national_number}"
         # Call the save method of the parent class (AbstractUser) to save the custom user instance
         super().save(*args, **kwargs)
+
+
+# # Define status model
+# class Status(models.Model):
+#     name = models.CharField(max_length=50, unique=True)
+
+
+# # Define Order model
+# class Order(models.Model):
+#     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     status = models.ForeignKey(Status, on_delete=models.CASCADE)
+#     # status = models.CharField(max_length=50)
+#     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+#     order_date = models.DateTimeField(default=timezone.now)
+#     delivered = models.BooleanField(default=False)
+
+
+# # Define OrderItem model
+# class OrderItem(models.Model):
+#     order = models.ForeignKey(Order, on_delete=models.CASCADE)
+#     item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+#     quantity = models.IntegerField()
 
 
 

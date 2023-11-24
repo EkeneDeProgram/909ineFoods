@@ -20,9 +20,10 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path("admin/", admin.site.urls),
     path("api/user/", include("users.urls")),
-    path('api/vendor/', include("vendors.urls")),
+    path("api/vendor/", include("vendors.urls")),
+    path("api/orders/", include("orders.urls")),
 ]
 
 if settings.DEBUG:
