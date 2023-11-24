@@ -22,4 +22,5 @@ urlpatterns = [
     path("vendor_menu_by_category/<int:category_id>/", VendorItemsByCategoryView.as_view(), name="vendor-menu-by-category"),
     path("delete_item/<int:item_id>/", DeleteVendorItemView.as_view(), name="delete-item"), 
     path("update_item/<int:item_id>/", UpdateItemView.as_view(), name="update-item"), 
+    path("update_item_image/<int:item_id>/", UpdateItemImageView.as_view(), name="update-item-image"),
 ]

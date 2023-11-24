@@ -7,6 +7,7 @@ from rest_framework.views import APIView
 from django.contrib.auth import logout
 from django.core.exceptions import ValidationError
 from rest_framework.parsers import MultiPartParser, FormParser
+from django.shortcuts import get_object_or_404
 
 # Import project modules
 from .models import Vendor, Location, MenuItem
@@ -557,7 +558,7 @@ class UpdateVendorImageView(APIView):
             try:
                 decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
                 vendor_id = decoded_payload.get("id")
-            
+
 
                 if not image:
                     return Response({"detail": "No image provided"}, status=status.HTTP_400_BAD_REQUEST)
@@ -579,6 +580,47 @@ class UpdateVendorImageView(APIView):
         return response
             
 
+# Define view to update item  image
+class UpdateItemImageView(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def patch(self, request, item_id,  *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        # Retrieve the menu item instance or return a 404 response if not found
+        menu_item = get_object_or_404(MenuItem, id=item_id)
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get("id")
+                # Retrieve the vendor from the database
+                vendor = Vendor.objects.get(id=vendor_id)
+
+                if vendor != menu_item.vendor:
+                    return Response({'detail': 'Permission denied'}, status=status.HTTP_403_FORBIDDEN)
+
+                # Assuming the user is the owner, update the image
+                menu_item.image = request.data.get('image', menu_item.image)
+                
+                try:
+                    # Save the updated menu item
+                    menu_item.save()
+
+                    # Serialize the updated menu item and return the data
+                    serializer = MenuItemSerializer(menu_item)
+                    return Response(serializer.data, status=status.HTTP_200_OK)
+
+                except Exception as e:
+                    # Handle validation errors or other exceptions
+                    return Response({'detail': str(e)}, status=status.HTTP_400_BAD_REQUEST)
+                
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except Vendor.DoesNotExist:
+                return Response({"detail": "Vendor not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            
 
 
 
