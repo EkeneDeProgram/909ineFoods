@@ -56,28 +56,3 @@ class User(AbstractUser):
         super().save(*args, **kwargs)
 
 
-# # Define status model
-# class Status(models.Model):
-#     name = models.CharField(max_length=50, unique=True)
-
-
-# # Define Order model
-# class Order(models.Model):
-#     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     status = models.ForeignKey(Status, on_delete=models.CASCADE)
-#     # status = models.CharField(max_length=50)
-#     total_price = models.DecimalField(max_digits=10, decimal_places=2)
-#     order_date = models.DateTimeField(default=timezone.now)
-#     delivered = models.BooleanField(default=False)
-
-
-# # Define OrderItem model
-# class OrderItem(models.Model):
-#     order = models.ForeignKey(Order, on_delete=models.CASCADE)
-#     item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
-#     quantity = models.IntegerField()
-
-
-
-
