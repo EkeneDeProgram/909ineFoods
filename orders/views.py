@@ -294,7 +294,75 @@ class UpdateOrderView(APIView):
 
 
 
+# Define view to enable  vendors to retrieve a list of orders placed with their them
+class GetVendorOrdersView(APIView):
+    def get(self, request,  *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get("id")
+
+                # Get orders for the specific vendor
+                orders = Order.objects.filter(item__vendor__id=vendor_id)
+
+                # Serialize the orders using OrderItemSerializer
+                serializer = OrderSerializer(orders, many=True)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# Define view to allows vendor to update specific orderstatus
+class UpdateOrderStatus(APIView):
+    def put(self, request, order_id,  *args, **kwargs):
+        # Get the JWT token from the cookie
+        jwt_token = request.COOKIES.get("jwt")
+
+        # Get the new order status 
+        new_status = request.data.get("status")
+        delivery_status = request.data.get("delivered")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                vendor_id = decoded_payload.get("id")
+                
+
+                # Get specific order for the specific vendor
+                order = get_object_or_404(Order, id=order_id, item__vendor__id=vendor_id)
+                # orders = Order.objects.filter(item__vendor__id=vendor_id)
+
+                # Update user details
+                if new_status:
+                    status_instance = get_object_or_404(Status, id=new_status)
+                    order.status = status_instance
+                if delivery_status:
+                        order.delivered = delivery_status
+
+                order.save()
+
+                # Serialize the orders using OrderItemSerializer
+                serializer = OrderSerializer(order)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+
+     
+
 # Define view to enable user Cancels a specific order.
 
+# Define view to Allows vendors to cancel a specific order, depending on the business rules
 
 
