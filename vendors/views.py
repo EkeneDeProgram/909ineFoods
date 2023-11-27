@@ -10,8 +10,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.shortcuts import get_object_or_404
 
 # Import project modules
-from .models import Vendor, Location, MenuItem
-from .serializers import VendorSerializer, MenuItemSerializer
+from .models import Vendor, Location, Menu
+from .serializers import VendorSerializer, MenuSerializer
 from users.utils import *
 
 # Import python standard modules
@@ -391,7 +391,7 @@ class AddMenuItemView(APIView):
                 vendor_id = decoded_payload.get("id")
 
                 # Create a new menu item
-                menu_item = MenuItem.objects.create(
+                menu_item = Menu.objects.create(
                     vendor_id=vendor_id,
                     category_id=category_id,  
                     name=name,
@@ -400,7 +400,7 @@ class AddMenuItemView(APIView):
                 )
 
                 # Serialize the new menu item and return the data
-                serializer = MenuItemSerializer(menu_item)
+                serializer = MenuSerializer(menu_item)
                 response.data = serializer.data
                 response.status_code = status.HTTP_201_CREATED
 
@@ -424,11 +424,11 @@ class VendorMenuView(APIView):
                 vendor = Vendor.objects.get(id=vendor_id)
 
                 # Retrieve all items added by the vendor
-                items = MenuItem.objects.filter(vendor=vendor)
+                items = Menu.objects.filter(vendor=vendor)
 
     
                 # Serialize the items and return the data
-                serializer = MenuItemSerializer(items, many=True)
+                serializer = MenuSerializer(items, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
             except jwt.InvalidTokenError:
@@ -449,11 +449,11 @@ class VendorItemsByCategoryView(APIView):
                 vendor = Vendor.objects.get(id=vendor_id)
 
                 # Retrieve all items added by the vendor for the specified category
-                items = MenuItem.objects.filter(vendor=vendor, category=category_id)
+                items = Menu.objects.filter(vendor=vendor, category=category_id)
 
     
                 # Serialize the items and return the data
-                serializer = MenuItemSerializer(items, many=True)
+                serializer = MenuSerializer(items, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
             except jwt.InvalidTokenError:
@@ -477,8 +477,8 @@ class DeleteVendorItemView(APIView):
 
                 # Check if the item exists and belongs to the vendor
                 try:
-                    item = MenuItem.objects.get(id=item_id, vendor=vendor)
-                except MenuItem.DoesNotExist:
+                    item = Menu.objects.get(id=item_id, vendor=vendor)
+                except Menu.DoesNotExist:
                     return Response({"detail": "Item not found or does not belong to the vendor"}, status=status.HTTP_404_NOT_FOUND)
 
                 # Delete the location
@@ -518,8 +518,8 @@ class UpdateItemView(APIView):
 
                 # Check if the item exists and belongs to the vendor
                 try:
-                    item = MenuItem.objects.get(id=item_id, vendor=vendor)
-                except MenuItem.DoesNotExist:
+                    item = Menu.objects.get(id=item_id, vendor=vendor)
+                except Menu.DoesNotExist:
                     return Response({"detail": "Item not found or does not belong to the vendor"}, status=status.HTTP_404_NOT_FOUND)
 
 
@@ -588,7 +588,7 @@ class UpdateItemImageView(APIView):
         jwt_token = request.COOKIES.get("jwt")
 
         # Retrieve the menu item instance or return a 404 response if not found
-        menu_item = get_object_or_404(MenuItem, id=item_id)
+        menu_item = get_object_or_404(Menu, id=item_id)
 
         if jwt_token:
             try:
@@ -608,7 +608,7 @@ class UpdateItemImageView(APIView):
                     menu_item.save()
 
                     # Serialize the updated menu item and return the data
-                    serializer = MenuItemSerializer(menu_item)
+                    serializer = MenuSerializer(menu_item)
                     return Response(serializer.data, status=status.HTTP_200_OK)
 
                 except Exception as e:

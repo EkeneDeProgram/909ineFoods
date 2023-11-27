@@ -504,10 +504,10 @@ class VendorMenuView(APIView):
                 vendor = get_object_or_404(Vendor, id=vendor_id)
                 
                 # Retrieve all items added to the menu by the vendor
-                menu_items = MenuItem.objects.filter(vendor=vendor)
+                menu_items = Menu.objects.filter(vendor=vendor)
 
                 # Serialize the items and return the data
-                serializer = MenuItemSerializer(menu_items, many=True)
+                serializer = MenuSerializer(menu_items, many=True)
                 return Response(serializer.data, status=status.HTTP_200_OK)
 
             except jwt.InvalidTokenError:

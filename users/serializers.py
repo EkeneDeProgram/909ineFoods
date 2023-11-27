@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import User, Address
-from vendors.serializers import MenuItemSerializer
+from vendors.serializers import MenuSerializer
 
 # Define serializer for Address
 class AddressSerializer(serializers.ModelSerializer):

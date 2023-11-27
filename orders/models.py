@@ -12,21 +12,22 @@ class Status(models.Model):
 
 
 # Define OrderItem model
-class OrderItem(models.Model):
+class Order(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+    item = models.ForeignKey(Menu, on_delete=models.CASCADE)
+    status = models.ForeignKey(Status, on_delete=models.CASCADE, default=1)
     quantity = models.IntegerField()
     price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     order_date = models.DateTimeField(default=timezone.now)
     delivered = models.BooleanField(default=False)
-    paid_for = models.BooleanField(default=True)
+    paid_for = models.BooleanField(default=False)
 
 
 
 # Define CartItem model
-class CartItem(models.Model):
+class Cart(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
-    item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
+    item = models.ForeignKey(Menu, on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField(default=1)
     created_at = models.DateTimeField(default=timezone.now)
     

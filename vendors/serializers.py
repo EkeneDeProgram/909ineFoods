@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Location, Vendor, Category, MenuItem
+from .models import Location, Vendor, Category, Menu
 
 
 # Location model serializer
@@ -50,9 +50,9 @@ class CategorySerializer(serializers.ModelSerializer):
 
     
 # MenuItem model serializer
-class MenuItemSerializer(serializers.ModelSerializer):
+class MenuSerializer(serializers.ModelSerializer):
     class Meta:
-        model = MenuItem
+        model = Menu
         fields = ("id", "vendor", "category", "name", "description", "price")
 
 

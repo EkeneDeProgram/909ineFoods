@@ -73,7 +73,7 @@ class Category(models.Model):
     
 
 # Define MenuItem model
-class MenuItem(models.Model):
+class Menu(models.Model):
     vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     name = models.CharField(max_length=255)
