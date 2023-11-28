@@ -23,6 +23,9 @@ urlpatterns = [
     # Search urls
     path("search_vendors/", SearchVendorsView.as_view(), name="search-vendors"),
     path("search_Dishes/", SearchDishesView.as_view(), name="search-Dishes"),
-    path("search_category/", SearchByCategoryView.as_view(), name="search-category"),
+    path("search_category/", SearchDishesByCategoryView.as_view(), name="search-category"),
+    path("search_price/", SearchDishesByPriceView.as_view(), name="search-price"),
+    path("search_location/", SearchVendorByLocationView.as_view(), name="search-location"),
+
 
 ]

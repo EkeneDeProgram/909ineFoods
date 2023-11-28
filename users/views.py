@@ -643,7 +643,7 @@ class SearchDishesView(APIView):
 
 
 # Define view to search by category
-class SearchByCategoryView(APIView):
+class SearchDishesByCategoryView(APIView):
     def get(self, request,  *args, **kwargs):
         jwt_token = request.COOKIES.get("jwt")
 
@@ -671,3 +671,59 @@ class SearchByCategoryView(APIView):
 
         return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+
+# Define view to search by price
+class SearchDishesByPriceView(APIView):
+    def get(self, request, *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+
+                # Get the price from the request parameters
+                price = request.query_params.get('price')
+
+                # Filter menu items based on the specified price 
+                menu_items = Menu.objects.filter(price=price)
+
+                # Serialize the queryset
+                serializer = MenuSerializer(menu_items, many=True)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# Define view to search vendor by location
+class SearchVendorByLocationView(APIView):
+    def get(self, request, *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                # Get the location query from the request parameters
+                location_query = request.query_params.get('location', '')
+
+                # Filter vendors based on the street in the location query
+                vendors = Vendor.objects.filter(vendor_locations__street__icontains=location_query)
+
+                # Serialize the vendors along with their locations
+                serializer = VendorSerializer(vendors, many=True, context={'location_query': location_query})
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
