@@ -20,5 +20,9 @@ urlpatterns = [
     path("vendor_menu/<int:vendor_id>/", VendorMenuView.as_view(), name="vendor_menu"),
     path("categories/", CategoryListView.as_view(), name="category_list"),
     path("vendors_by_category/<int:category_id>/", VendorsByCategoryView.as_view(), name="vendors_by_category"),
+    # Search urls
+    path("search_vendors/", SearchVendorsView.as_view(), name="search-vendors"),
+    path("search_Dishes/", SearchDishesView.as_view(), name="search-Dishes"),
+    path("search_category/", SearchByCategoryView.as_view(), name="search-category"),
 
 ]

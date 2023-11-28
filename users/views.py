@@ -416,13 +416,18 @@ class UpdateUserImageView(APIView):
                 response.data = {
                     "message": "update successfull"
                 }
+
+                return response
                     
             except jwt.InvalidTokenError:
                 return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
             except User.DoesNotExist:
                 return Response({"detail": "Vendor not found"}, status=status.HTTP_404_NOT_FOUND)
             
-        return response
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+            
+        # return response
             
 
 # Define view to enable user delete thier account
@@ -444,12 +449,17 @@ class UserDeleteAccountView(APIView):
                     "message": "Your account has been deleted successfully"
                 }
 
+                return response
+            
             except jwt.InvalidTokenError:
                 return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
             except User.DoesNotExist:
                 return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
 
-        return response
+
+        # return response
 
   
 # Define view to list all active vendors
@@ -470,6 +480,9 @@ class ListActiveVendorsView(APIView):
             except User.DoesNotExist:
                 return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+            
 
 # Allows users to retrieve details about a specific vendor based on the vendor ID. 
 class VendorDetailsView(APIView):
@@ -489,6 +502,9 @@ class VendorDetailsView(APIView):
                 return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
             except User.DoesNotExist:
                 return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
        
 
 # Define view to enables users to view the menu of a specific food vendor
@@ -515,6 +531,9 @@ class VendorMenuView(APIView):
             except User.DoesNotExist:
                 return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
             
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+            
 
 # Define a view that provides users with a list of food categories.
 class CategoryListView(APIView):
@@ -536,6 +555,9 @@ class CategoryListView(APIView):
                 return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
             except User.DoesNotExist:
                 return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
 
 
 # Define a view to retrieve a list of vendors offering food in a specific category 
@@ -561,5 +583,91 @@ class VendorsByCategoryView(APIView):
                 return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
             except User.DoesNotExist:
                 return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+            
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
 
+            
+
+# Define view to search  vendors
+class SearchVendorsView(APIView):
+    def get(self, request, *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                # Get the search query from the request parameters
+                search_query = request.query_params.get('query', '')
+
+                # Filter vendors based on the search query
+                vendors = Vendor.objects.filter(name__icontains=search_query)
+
+                # Serialize the queryset
+                serializer = VendorSerializer(vendors, many=True)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# Define view to  Search  Dishes
+class SearchDishesView(APIView):
+    def get(self, request, *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                # Get the search query from the request parameters
+                search_query = request.query_params.get('query', '')
+
+                # Filter vendors based on the search query
+                vendors = Menu.objects.filter(name__icontains=search_query)
+
+                # Serialize the queryset
+                serializer = MenuSerializer(vendors, many=True)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+            
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
+
+
+# Define view to search by category
+class SearchByCategoryView(APIView):
+    def get(self, request,  *args, **kwargs):
+        jwt_token = request.COOKIES.get("jwt")
+
+        if jwt_token:
+            try:
+                decoded_payload = jwt.decode(jwt_token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITH])
+                # Get the search query from the request parameters
+                search_query = request.query_params.get('query', '')
+
+                # Retrieve the category based on the name
+                category = Category.objects.get(name__icontains=search_query)
+
+                # Filter menu items based on the category
+                menu_items = Menu.objects.filter(category=category)
+
+                # Serialize the queryset
+                serializer = MenuSerializer(menu_items, many=True)
+
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            except jwt.InvalidTokenError:
+                return Response({"detail": "Invalid token"}, status=status.HTTP_401_UNAUTHORIZED)
+            except User.DoesNotExist:
+                return Response({"detail": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({"detail": "Authentication credentials were not provided."}, status=status.HTTP_401_UNAUTHORIZED)
 
